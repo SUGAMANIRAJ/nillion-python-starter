@@ -17,10 +17,10 @@ from nada_dsl import *
 def nada_main():
 
     #Parties 
-    product0 = Party(name="Product0")
-    product1 = Party(name="Product1")
-    product2 = Party(name="Product2")
-    outparty = Party(name="OutParty")
+    product0 = Party(name="product0")
+    product1 = Party(name="product1")
+    product2 = Party(name="product2")
+    outparty = Party(name="outparty")
 
    
     ## Sentiment scores from product 0 reviews
@@ -37,13 +37,13 @@ def nada_main():
 
     ## Calculate total sentiment score and count of reviews for each product
     total_sentiment_p0 = p0_r0_sentiment + p0_r1_sentiment
-    total_reviews_p0 = 2
+    total_reviews_p0 = Integer(2)
     
     total_sentiment_p1 = p1_r0_sentiment + p1_r1_sentiment
-    total_reviews_p1 = 2
+    total_reviews_p1 = Integer(2)
     
     total_sentiment_p2 = p2_r0_sentiment + p2_r1_sentiment
-    total_reviews_p2 = 2
+    total_reviews_p2 = Integer(2)
 
     ## Calculate average sentiment score for each product
     avg_sentiment_p0 = total_sentiment_p0 / total_reviews_p0
@@ -59,4 +59,5 @@ def nada_main():
 
 
 #This program ensures the security and privacy of reviews given by the customers by the using the Secret Datatype inside the network.
+#Without Comprimising the security of customers, Companies can calculate the avg sentimets on products
 
