@@ -1,63 +1,57 @@
-
-
-
-#Securely computing the average sentiment score of customer reviews across different products. 
-#This can help businesses analyze customer feedback while preserving the privacy of individual reviews.
-
-
-"""
-Secure Average Sentiment Score Calculation from Customer Reviews
-no.of.products: p = 3
-no.of.reviews per product: r = 2
-
-"""
-
+import cv2
+import numpy as np
+import os
 from nada_dsl import *
+import nada_numpy as na
 
-def nada_main():
+from tensorflow.keras.models import load_model
 
-    #Parties 
-    product0 = Party(name="product0")
-    product1 = Party(name="product1")
-    product2 = Party(name="product2")
-    outparty = Party(name="outparty")
+# Load the VGG19 model
+vgg_model = load_model("/content/drive/MyDrive/Deepfakedetectiondataset/vgg_model.h5")
+vgg_model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 
-   
-    ## Sentiment scores from product 0 reviews
-    p0_r0_sentiment = SecretInteger(Input(name="p0_r0_sentiment", party=product0))
-    p0_r1_sentiment = SecretInteger(Input(name="p0_r1_sentiment", party=product0))
-    
-    ## Sentiment scores from product 1 reviews
-    p1_r0_sentiment = SecretInteger(Input(name="p1_r0_sentiment", party=product1))
-    p1_r1_sentiment = SecretInteger(Input(name="p1_r1_sentiment", party=product1))
-
-    ## Sentiment scores from product 2 reviews
-    p2_r0_sentiment = SecretInteger(Input(name="p2_r0_sentiment", party=product2))
-    p2_r1_sentiment = SecretInteger(Input(name="p2_r1_sentiment", party=product2))
-
-    ## Calculate total sentiment score and count of reviews for each product
-    total_sentiment_p0 = p0_r0_sentiment + p0_r1_sentiment
-    total_reviews_p0 = Integer(2)
-    
-    total_sentiment_p1 = p1_r0_sentiment + p1_r1_sentiment
-    total_reviews_p1 = Integer(2)
-    
-    total_sentiment_p2 = p2_r0_sentiment + p2_r1_sentiment
-    total_reviews_p2 = Integer(2)
-
-    ## Calculate average sentiment score for each product
-    avg_sentiment_p0 = total_sentiment_p0 / total_reviews_p0
-    avg_sentiment_p1 = total_sentiment_p1 / total_reviews_p1
-    avg_sentiment_p2 = total_sentiment_p2 / total_reviews_p2
-
-    #Output
-    avg_sentiment_p0_output = Output(avg_sentiment_p0, "average_sentiment_product0", outparty)
-    avg_sentiment_p1_output = Output(avg_sentiment_p1, "average_sentiment_product1", outparty)
-    avg_sentiment_p2_output = Output(avg_sentiment_p2, "average_sentiment_product2", outparty)
-
-    return [avg_sentiment_p0_output, avg_sentiment_p1_output, avg_sentiment_p2_output]
+# Load the ResNet50 model
+resnet_model = load_model("/content/drive/MyDrive/Deepfakedetectiondataset/resnet_model.h5")
+resnet_model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 
 
-#This program ensures the security and privacy of reviews given by the customers by the using the Secret Datatype inside the network.
-#Without Comprimising the security of customers, Companies can calculate the avg sentimets on products
 
+def extract_frames(video_path, num_frames=10):
+    frames = []
+    cap = cv2.VideoCapture(video_path)
+    frame_count = 0
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+        if frame_count % (cap.get(cv2.CAP_PROP_FRAME_COUNT) // num_frames) == 0:
+            frame = cv2.resize(frame, (224, 224))
+            frame = frame / 255.0
+            frame = np.expand_dims(frame, axis=0)
+            frames.append(frame)
+        frame_count += 1
+    cap.release()
+    frames = np.concatenate(frames, axis=0)
+    return frames
+
+input_video_path = os.sys.argv[1]
+
+# Preprocess the input video frames
+input_frames = extract_frames("/content/drive/MyDrive/Deepfakedetectiondataset/arjdbfrxvufk.mp4",num_frames=10)
+input_frames = np.array(input_frames)
+input_frames = input_frames / 255.0
+
+vgg_predictions = na.array(vgg_model.predict(input_frames, verbose=0))
+resnet_predictions = na.array(resnet_model.predict(input_frames, verbose=0))
+
+# Count the number of predictions for each class (0: real, 1: fake)
+class_counts = np.bincount([np.argmax(vgg_predictions), np.argmax(resnet_predictions)])
+
+# Get the index of the class with the highest count
+final_prediction = np.argmax(class_counts)
+
+# Print the final prediction
+if final_prediction == 0:
+    print("REAL")
+else:
+    print("FAKE")
